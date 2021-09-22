@@ -5,7 +5,6 @@ import "./card-factory.sol";
 
 contract CardPackFactory is CardFactory {
 
-    using SafeMath for uint256;
     uint cardPackFee = 0.015 ether;
     uint cardPackQuantity = 10;
     uint rareCardOdds = 10;
@@ -23,12 +22,12 @@ contract CardPackFactory is CardFactory {
     function _createCardPack() internal {
         uint cardCount = 0;
 
-        cardCount = createNonCommonCard(legendaryCardOdds, cardCount, Type.LEGENDARY);
-        cardCount = createNonCommonCard(exoticCardOdds, cardCount, Type.EXOTIC);
-        cardCount = createNonCommonCard(rareCardOdds, cardCount, Type.RARE);
+        cardCount = createNonCommonCard(legendaryCardOdds, cardCount, 3);
+        cardCount = createNonCommonCard(exoticCardOdds, cardCount, 2);
+        cardCount = createNonCommonCard(rareCardOdds, cardCount, 1);
         createCommonCards(cardCount, cardPackQuantity);
 
-        ownerCardCount[msg.sender].add(cardPackQuantity);
+        ownerCardCount[msg.sender] = ownerCardCount[msg.sender] + cardPackQuantity;
     }
 
     function setCardPackQuantity(uint _quantity) external onlyOwner {

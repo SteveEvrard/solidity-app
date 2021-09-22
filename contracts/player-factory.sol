@@ -2,11 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract PlayerFactory is Ownable {
 
-    using SafeMath for uint256;
     uint private _playerId;
 
     event NewPlayer(uint playerId, string name);
@@ -26,6 +24,6 @@ contract PlayerFactory is Ownable {
         players.push(player);
         playerIdToPlayer[_playerId] = player;
         emit NewPlayer(_playerId, _name);
-        _playerId.add(1);
+        _playerId = _playerId + 1;
     }
 }

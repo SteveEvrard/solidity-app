@@ -11,7 +11,6 @@ contract CardOwnership is CardPackFactory, ERC721 {
     //contract address ropsten: 0x5777097744979aD86cBaFa610d9f941987565D9d
 
     using AddressUtils for address;
-    using SafeMath for uint256;
 
     bytes4 internal constant MAGIC_ON_ERC721_RECEIVED = 0x150b7a02;
 
@@ -89,7 +88,7 @@ contract CardOwnership is CardPackFactory, ERC721 {
         }
     }
 
-    function mintCustomCard(address _to, uint _playerId, Type _type, uint _attributes) external onlyOwner {
+    function mintCustomCard(address _to, uint _playerId, uint _type, uint _attributes) external onlyOwner {
         uint tokenId = createCustomCard(_playerId, _type, _attributes);
         _mint(_to, tokenId);
     }
@@ -99,7 +98,7 @@ contract CardOwnership is CardPackFactory, ERC721 {
         require(cardIdToOwner[_tokenId] == address(0), "CARD ALREADY EXISTS");
 
         cardIdToOwner[_tokenId] = _to;
-        ownerCardCount[_to].add(1);
+        ownerCardCount[_to] = ownerCardCount[_to] + 1;
     }
     
 }
