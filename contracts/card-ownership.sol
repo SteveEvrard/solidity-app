@@ -8,8 +8,6 @@ import "./erc721-token-receiver.sol";
 
 contract CardOwnership is CardPackFactory, ERC721 {
 
-    //contract address ropsten: 0x5777097744979aD86cBaFa610d9f941987565D9d
-
     using AddressUtils for address;
 
     bytes4 internal constant MAGIC_ON_ERC721_RECEIVED = 0x150b7a02;
@@ -91,6 +89,7 @@ contract CardOwnership is CardPackFactory, ERC721 {
     function mintCustomCard(address _to, uint _playerId, uint _type, uint _attributes) external onlyOwner {
         uint tokenId = createCustomCard(_playerId, _type, _attributes);
         _mint(_to, tokenId);
+        _tokenId = _tokenId + 1;
     }
 
     function _mint(address _to, uint256 _tokenId) internal {

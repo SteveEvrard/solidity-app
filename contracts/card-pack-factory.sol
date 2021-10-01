@@ -5,17 +5,17 @@ import "./card-factory.sol";
 
 contract CardPackFactory is CardFactory {
 
-    uint cardPackFee = 0.015 ether;
+    uint cardPackFee = 0.005 ether;
     uint cardPackQuantity = 10;
-    uint rareCardOdds = 10;
-    uint exoticCardOdds = 100;
-    uint legendaryCardOdds = 1000;
+    uint rareCardOdds = 3;
+    uint exoticCardOdds = 25;
+    uint legendaryCardOdds = 100;
 
     mapping (address => uint) public ownerCardCount;
     mapping (address => bool) public existingUser;
 
     function purchaseCardPack() external payable {
-        require(msg.value == cardPackFee);
+        require(msg.value == cardPackFee, "VALUE SENT NOT EQUAL TO CARD FEE");
         _createCardPack();
     }
 

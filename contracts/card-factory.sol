@@ -5,13 +5,14 @@ import "./player-factory.sol";
 
 contract CardFactory is PlayerFactory {
 
-    uint private _tokenId;
+    uint _tokenId = 0;
     uint private _randNonce = 0;
+    uint totalPlayers = 189;
     Card[] public cards;
 
     mapping (uint => address) public cardIdToOwner;
 
-    event CardCreated(uint cardId, uint cardType);
+    event CardCreated(uint cardId, uint cardType, uint playerId, uint attributeHash, address owner);
     
     struct Card {
         uint cardId;
@@ -24,15 +25,15 @@ contract CardFactory is PlayerFactory {
         uint attrHash = _generateRandomNumber();
         Card memory card = Card(_tokenId, _playerId, attrHash, _type);
         cards.push(card);
-        emit CardCreated(_tokenId, _type);
+        emit CardCreated(_tokenId, _type, _playerId, attrHash, msg.sender);
+        cardIdToOwner[_tokenId] = msg.sender;
         _tokenId = _tokenId + 1;
     }
 
     function createCustomCard(uint _playerId, uint _type, uint _attribute) internal returns(uint) {
         Card memory card = Card(_tokenId, _playerId, _attribute, _type);
         cards.push(card);
-        emit CardCreated(_tokenId, _type);
-        _tokenId = _tokenId + 1;
+        emit CardCreated(_tokenId, _type, _playerId, _attribute, msg.sender);
         return _tokenId;
     }
 
@@ -40,10 +41,9 @@ contract CardFactory is PlayerFactory {
         uint cardCount = _cardCount;
 
         if(_generateRandomNumber() % _divisor == 0) {
-            uint playerId = _generateRandomNumber() % players.length;
+            uint playerId = _generateRandomNumber() % totalPlayers;
             _randNonce = _randNonce + 1;
             createCard(playerId, _type);
-            cardIdToOwner[_tokenId] = msg.sender;
             cardCount = _cardCount + 1;
         }
 
@@ -52,14 +52,17 @@ contract CardFactory is PlayerFactory {
 
     function createCommonCards(uint _cardsCreated, uint _cardPackQuantity) internal {
         for(uint i = _cardsCreated; i < _cardPackQuantity; i++) {
-            uint playerId = _generateRandomNumber() % players.length;
+            uint playerId = _generateRandomNumber() % totalPlayers;
             _randNonce = _randNonce + 1;
             createCard(playerId, 0);
-            cardIdToOwner[_tokenId] = msg.sender;
         }
     }
 
     function _generateRandomNumber() internal view returns (uint) {
         return uint(keccak256(abi.encodePacked(block.difficulty, block.timestamp, _randNonce)));
+    }
+
+    function setTotalPlayers(uint _count) external onlyOwner {
+        totalPlayers = _count;
     }
 }
