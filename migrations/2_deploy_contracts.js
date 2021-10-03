@@ -1,5 +1,5 @@
-var CardOwnership = artifacts.require("./CardOwnership.sol");
+var CardAuction = artifacts.require("./CardAuction.sol");
 
 module.exports = function(deployer) {
-    deployer.deploy(CardOwnership);
+    deployer.deploy(CardAuction);
 }
