@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "./player-factory.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract CardFactory is PlayerFactory {
+contract CardFactory is Ownable {
 
     uint _tokenId = 0;
     uint private _randNonce = 0;
