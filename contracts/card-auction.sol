@@ -5,18 +5,18 @@ import "./card-ownership.sol";
 
 contract CardAuction is CardOwnership {
 
-    uint maxAuctionDuration = 604800;
-    uint totalCardsForSale;
+    uint public maxAuctionDuration = 604800;
     mapping(uint => bool) public cardIsForSale;
     mapping(uint => uint) public cardToCurrentBid;
     mapping(uint => address) public leadingBidder;
     mapping(uint => uint) public auctionExpireDate;
     
-    event AuctionOpened(uint _cardId, uint _startingBid, uint _currentTime);
-    event BidPlaced(uint _cardId, uint _bid, address _bidder);
+    event AuctionOpened(uint indexed cardId, uint startingBid, uint expireDate);
+    event BidPlaced(uint indexed cardId, uint bid, address bidder);
+    event AuctionClosed(uint indexed cardId, uint salePrice, address to);
 
     modifier onlyCardOwner(uint _cardId) {
-        address owner = cardIdToOwner[_tokenId];
+        address owner = cardIdToOwner[_cardId];
         require(owner == msg.sender, 'ONLY CARD OWNER CAN POST IT FOR AUCTION');
         _;
     }
@@ -32,8 +32,7 @@ contract CardAuction is CardOwnership {
         cardIsForSale[_cardId] = true;
         cardToCurrentBid[_cardId] = _startingBid;
         auctionExpireDate[_cardId] = block.timestamp + _duration;
-        totalCardsForSale = totalCardsForSale + 1;
-        emit AuctionOpened(_cardId, _startingBid, block.timestamp);
+        emit AuctionOpened(_cardId, _startingBid, block.timestamp + _duration);
     }
 
     function placeBid(uint _cardId) external payable {
@@ -50,18 +49,19 @@ contract CardAuction is CardOwnership {
     function endAuction(uint _cardId) external {
         require(auctionExpireDate[_cardId] <= block.timestamp);
 
-        address payable beneficiary = payable(cardIdToOwner[_cardId]);
-
-        beneficiary.transfer(cardToCurrentBid[_cardId]);
-        cardIdToOwner[_cardId] = leadingBidder[_cardId];
+        if(leadingBidder[_cardId] != address(0)) {
+            transferCard(_cardId);
+        }
         cardIsForSale[_cardId] = false;
         cardToCurrentBid[_cardId] = 0;
         leadingBidder[_cardId] = address(0);
         auctionExpireDate[_cardId] = 0;
-        totalCardsForSale = totalCardsForSale - 1;
     }
 
-    function getAuctionTimeRemaining(uint _cardId) external view returns(bool) {
-        return auctionExpireDate[_cardId] <= block.timestamp;
+    function transferCard(uint _cardId) internal {
+        address payable beneficiary = payable(cardIdToOwner[_cardId]);
+
+        beneficiary.transfer(cardToCurrentBid[_cardId]);
+        cardIdToOwner[_cardId] = leadingBidder[_cardId];
     }
 }

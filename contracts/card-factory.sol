@@ -12,7 +12,7 @@ contract CardFactory is Ownable {
 
     mapping (uint => address) public cardIdToOwner;
 
-    event CardCreated(uint cardId, uint cardType, uint playerId, uint attributeHash, address owner);
+    event CardCreated(uint cardId, uint cardType, uint playerId, uint attributeHash, address indexed owner);
     
     struct Card {
         uint cardId;
