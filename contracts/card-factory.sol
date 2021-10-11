@@ -11,6 +11,8 @@ contract CardFactory is Ownable {
     Card[] public cards;
 
     mapping (uint => address) public cardIdToOwner;
+    mapping (address => uint[]) public userOwnedCards;
+    mapping (uint => uint) public cardIsAtIndex;
 
     event CardCreated(uint cardId, uint cardType, uint playerId, uint attributeHash, address indexed owner);
     
@@ -27,6 +29,8 @@ contract CardFactory is Ownable {
         cards.push(card);
         emit CardCreated(_tokenId, _type, _playerId, attrHash, msg.sender);
         cardIdToOwner[_tokenId] = msg.sender;
+        userOwnedCards[msg.sender].push(_tokenId);
+        cardIsAtIndex[_tokenId] = userOwnedCards[msg.sender].length;
         _tokenId = _tokenId + 1;
     }
 

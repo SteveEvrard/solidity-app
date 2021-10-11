@@ -14,9 +14,12 @@ contract CardPackFactory is CardFactory {
     mapping (address => uint) public ownerCardCount;
     mapping (address => bool) public existingUser;
 
+    event CardPackPurchased(address indexed owner);
+
     function purchaseCardPack() external payable {
         require(msg.value == cardPackFee, "VALUE SENT NOT EQUAL TO CARD FEE");
         _createCardPack();
+        emit CardPackPurchased(msg.sender);
     }
 
     function _createCardPack() internal {
