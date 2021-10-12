@@ -94,7 +94,7 @@ contract CardAuction is CardOwnership {
         address payable beneficiary = payable(cardIdToOwner[_cardId]);
 
         userOwnedCards[leadingBidder[_cardId]].push(_cardId);
-        cardIsAtIndex[_cardId] = userOwnedCards[leadingBidder[_cardId]].length;
+        cardIsAtIndex[_cardId] = userOwnedCards[leadingBidder[_cardId]].length - 1;
         uint cardIndex = cardIsAtIndex[_cardId];
         userOwnedCards[cardIdToOwner[_cardId]][cardIndex] = 999999999999;
         cardIdToOwner[_cardId] = leadingBidder[_cardId];

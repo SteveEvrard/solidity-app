@@ -97,6 +97,9 @@ contract CardOwnership is CardPackFactory, ERC721 {
         require(cardIdToOwner[_tokenId] == address(0), "CARD ALREADY EXISTS");
 
         cardIdToOwner[_tokenId] = _to;
+        userOwnedCards[_to].push(_tokenId);
+        cardIsAtIndex[_tokenId] = userOwnedCards[_to].length - 1;
+
         ownerCardCount[_to] = ownerCardCount[_to] + 1;
     }
     

@@ -30,7 +30,7 @@ contract CardFactory is Ownable {
         emit CardCreated(_tokenId, _type, _playerId, attrHash, msg.sender);
         cardIdToOwner[_tokenId] = msg.sender;
         userOwnedCards[msg.sender].push(_tokenId);
-        cardIsAtIndex[_tokenId] = userOwnedCards[msg.sender].length;
+        cardIsAtIndex[_tokenId] = userOwnedCards[msg.sender].length - 1;
         _tokenId = _tokenId + 1;
     }
 
@@ -68,5 +68,9 @@ contract CardFactory is Ownable {
 
     function setTotalPlayers(uint _count) external onlyOwner {
         totalPlayers = _count;
+    }
+
+    function getUserOwnedCards(address _address) external view returns(uint[] memory) {
+        return userOwnedCards[_address];
     }
 }
