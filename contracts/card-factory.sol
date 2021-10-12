@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract CardFactory is Ownable {
 
-    uint _tokenId = 0;
+    uint _tokenId;
     uint private _randNonce = 0;
     uint totalPlayers = 189;
     Card[] public cards;

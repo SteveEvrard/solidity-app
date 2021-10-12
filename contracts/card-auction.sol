@@ -93,10 +93,11 @@ contract CardAuction is CardOwnership {
     function transferCard(uint _cardId) private {
         address payable beneficiary = payable(cardIdToOwner[_cardId]);
 
+        uint cardIndex = cardIsAtIndex[_cardId];
+        userOwnedCards[cardIdToOwner[_cardId]][cardIndex] = 999999999999999;
+
         userOwnedCards[leadingBidder[_cardId]].push(_cardId);
         cardIsAtIndex[_cardId] = userOwnedCards[leadingBidder[_cardId]].length - 1;
-        uint cardIndex = cardIsAtIndex[_cardId];
-        userOwnedCards[cardIdToOwner[_cardId]][cardIndex] = 999999999999;
         cardIdToOwner[_cardId] = leadingBidder[_cardId];
         beneficiary.transfer(cardToCurrentBid[_cardId]);
     }

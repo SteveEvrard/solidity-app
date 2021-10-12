@@ -73,7 +73,12 @@ contract CardOwnership is CardPackFactory, ERC721 {
 
     function _transfer(address _from, address _to, uint256 _tokenId) private {
         delete idToApproval[_tokenId];
+        uint cardIndex = cardIsAtIndex[_cardId];
+        userOwnedCards[cardIdToOwner[_cardId]][cardIndex] = 999999999999999;
+        
         cardIdToOwner[_tokenId] = _to;
+        userOwnedCards[_to].push(_tokenId);
+        cardIsAtIndex[_tokenId] = userOwnedCards[_to].length - 1;
         emit Transfer(_from, _to, _tokenId);
     }
 
