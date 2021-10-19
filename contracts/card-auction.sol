@@ -13,15 +13,22 @@ contract CardAuction is CardOwnership {
 
     // Aion aion;
     uint public maxAuctionDuration = 604800;
-    uint public auctionId;
+    uint public auctionId = 1;
     mapping(uint => bool) public cardIsForSale;
-    mapping(uint => uint) public cardToCurrentBid;
-    mapping(uint => address) public leadingBidder;
-    mapping(uint => uint) public auctionExpireDate;
     mapping(uint => uint) public cardToAuctionId;
+    mapping(uint => Auction) public auctionIdToAuction;
+
+    struct Auction {
+        uint auctionId;
+        uint currentBid;
+        address leadingBidder;
+        uint expireDate;
+        uint cardId;
+        uint bidCount;
+    }
     
     event AuctionOpened(uint indexed auctionId, uint indexed cardId, uint startingBid, uint expireDate, address indexed owner);
-    event BidPlaced(uint indexed auctionId, uint indexed cardId, uint bid, address indexed bidder, uint expireDate);
+    event BidPlaced(uint indexed auctionId, uint indexed cardId, uint bid, address indexed bidder);
     event AuctionClosed(uint indexed auctionId, uint indexed cardId, uint salePrice, address indexed to, bool completed);
 
     modifier onlyCardOwner(uint _cardId) {
@@ -52,53 +59,70 @@ contract CardAuction is CardOwnership {
     // }
 
     function createCardAuction(uint _cardId, uint _startingBid, uint _duration) external checkAuctionDuration(_duration) onlyCardOwner(_cardId) {
-        require(!cardIsForSale[_cardId], 'CARD ALREADY UP FOR AUCTION');
+        require(!cardIsForSale[_cardId], 'CARD IS CURRENTLY UP FOR AUCTION');
+        require(!cardIdToCard[_cardId].inUse, "CARD IS CURRENTLY IN USE");
 
+        Auction memory auction = Auction(auctionId, _startingBid, address(0), block.timestamp + _duration, _cardId, 0);
+        auctionIdToAuction[auctionId] = auction;
+
+        cardIdToCard[_cardId].inUse = true;
         cardToAuctionId[_cardId] = auctionId;
         cardIsForSale[_cardId] = true;
-        cardToCurrentBid[_cardId] = _startingBid;
-        auctionExpireDate[_cardId] = block.timestamp + _duration;
         emit AuctionOpened(auctionId, _cardId, _startingBid, block.timestamp + _duration, msg.sender);
         auctionId = auctionId + 1;
     }
 
     function placeBid(uint _cardId) external payable {
+        Auction memory auction = auctionIdToAuction[cardToAuctionId[_cardId]];
         require(cardIdToOwner[_cardId] != msg.sender, 'CAN NOT BID ON CARDS YOU OWN');
         require(cardIsForSale[_cardId], 'CARD NOT FOR SALE');
-        require(msg.value > cardToCurrentBid[_cardId], 'BID LOWER THAN CURRENT BID');
+        require(msg.value > auction.currentBid, 'BID LOWER THAN CURRENT BID');
 
-        address payable outbidAddress = payable(leadingBidder[_cardId]);
+        address payable outbidAddress = payable(auction.leadingBidder);
+
         if(outbidAddress != address(0)){
-            outbidAddress.transfer(cardToCurrentBid[_cardId]);
+            outbidAddress.transfer(auction.currentBid);
         }
-        cardToCurrentBid[_cardId] = msg.value;
-        leadingBidder[_cardId] = msg.sender;
-        emit BidPlaced(cardToAuctionId[_cardId], _cardId, msg.value, msg.sender, auctionExpireDate[_cardId]);
+
+        auctionIdToAuction[auction.auctionId].leadingBidder = msg.sender;
+        auctionIdToAuction[auction.auctionId].currentBid = msg.value;
+        auctionIdToAuction[auction.auctionId].bidCount = auctionIdToAuction[auction.auctionId].bidCount + 1;
+
+        emit BidPlaced(auction.auctionId, auction.cardId, msg.value, msg.sender);
     }
 
-    function endAuction(uint _cardId) public {
-        require(auctionExpireDate[_cardId] <= block.timestamp);
+    function endAuction(uint _cardId) public onlyCardOwner(_cardId) {
+        Auction memory auction = auctionIdToAuction[cardToAuctionId[_cardId]];
+        require(auction.expireDate <= block.timestamp, "AUCTION NOT YET FINISHED");
 
-        if(leadingBidder[_cardId] != address(0)) {
-            transferCard(_cardId);
+        if(auction.leadingBidder != address(0)) {
+            transferCard(_cardId, auction.leadingBidder, auction.currentBid);
         }
-        AuctionClosed(cardToAuctionId[_cardId], _cardId, cardToCurrentBid[_cardId], leadingBidder[_cardId], leadingBidder[_cardId] != address(0));
+
+        AuctionClosed(auction.auctionId, auction.cardId, auction.currentBid, auction.leadingBidder, auction.leadingBidder != address(0));
         cardIsForSale[_cardId] = false;
-        cardToCurrentBid[_cardId] = 0;
-        leadingBidder[_cardId] = address(0);
-        auctionExpireDate[_cardId] = 0;
+        cardIdToCard[_cardId].inUse = false;
         cardToAuctionId[_cardId] = 0;
     }
 
-    function transferCard(uint _cardId) private {
+    function cancelAuction(uint _cardId) public onlyCardOwner(_cardId) {
+        Auction memory auction = auctionIdToAuction[cardToAuctionId[_cardId]];
+        require(auction.leadingBidder == address(0), "CANNOT CANCEL AN AUCTION THAT HAS BIDS");
+        require(auction.expireDate > block.timestamp, "CANNOT CANCEL AN AUCTION AFTER IT IS EXPIRED");
+
+        cardIsForSale[_cardId] = false;
+        cardToAuctionId[_cardId] = 0;
+    }
+
+    function transferCard(uint _cardId, address _winner, uint _price) private {
         address payable beneficiary = payable(cardIdToOwner[_cardId]);
 
         uint cardIndex = cardIsAtIndex[_cardId];
         userOwnedCards[cardIdToOwner[_cardId]][cardIndex] = 999999999999999;
 
-        userOwnedCards[leadingBidder[_cardId]].push(_cardId);
-        cardIsAtIndex[_cardId] = userOwnedCards[leadingBidder[_cardId]].length - 1;
-        cardIdToOwner[_cardId] = leadingBidder[_cardId];
-        beneficiary.transfer(cardToCurrentBid[_cardId]);
+        userOwnedCards[_winner].push(_cardId);
+        cardIsAtIndex[_cardId] = userOwnedCards[_winner].length - 1;
+        cardIdToOwner[_cardId] = _winner;
+        beneficiary.transfer(_price);
     }
 }

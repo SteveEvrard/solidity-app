@@ -11,7 +11,7 @@ contract CardOwnership is CardPackFactory, ERC721 {
     using AddressUtils for address;
 
     bytes4 internal constant MAGIC_ON_ERC721_RECEIVED = 0x150b7a02;
-
+    address private ownerAddress = address(0x3bfF843835CABB198912e10629843Fc65E336C84);
     mapping (uint256 => address) internal idToApproval;
     mapping (address => mapping (address => bool)) internal ownerToOperators;
 
@@ -73,8 +73,8 @@ contract CardOwnership is CardPackFactory, ERC721 {
 
     function _transfer(address _from, address _to, uint256 _tokenId) private {
         delete idToApproval[_tokenId];
-        uint cardIndex = cardIsAtIndex[_cardId];
-        userOwnedCards[cardIdToOwner[_cardId]][cardIndex] = 999999999999999;
+        uint cardIndex = cardIsAtIndex[_tokenId];
+        userOwnedCards[cardIdToOwner[_tokenId]][cardIndex] = 999999999999999;
         
         cardIdToOwner[_tokenId] = _to;
         userOwnedCards[_to].push(_tokenId);
@@ -107,5 +107,13 @@ contract CardOwnership is CardPackFactory, ERC721 {
 
         ownerCardCount[_to] = ownerCardCount[_to] + 1;
     }
+
+    function withdraw(uint amount) external onlyOwner {
+        address payable owner = payable(ownerAddress);
+        owner.transfer(amount);
+    }
     
+    function setOwner(address _newOwner) external onlyOwner {
+        ownerAddress = _newOwner;
+    }
 }

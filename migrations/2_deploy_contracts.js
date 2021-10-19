@@ -1,5 +1,5 @@
-var CardAuction = artifacts.require("./CardAuction.sol");
+var CardGame = artifacts.require("./CardGame.sol");
 
 module.exports = function(deployer) {
-    deployer.deploy(CardAuction);
+    deployer.deploy(CardGame);
 }
