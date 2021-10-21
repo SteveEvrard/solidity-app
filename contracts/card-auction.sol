@@ -30,6 +30,7 @@ contract CardAuction is CardOwnership {
     event AuctionOpened(uint indexed auctionId, uint indexed cardId, uint startingBid, uint expireDate, address indexed owner);
     event BidPlaced(uint indexed auctionId, uint indexed cardId, uint bid, address indexed bidder);
     event AuctionClosed(uint indexed auctionId, uint indexed cardId, uint salePrice, address indexed to, bool completed);
+    event AuctionCancelled(uint cardId, address owner);
 
     modifier onlyCardOwner(uint _cardId) {
         address owner = cardIdToOwner[_cardId];
@@ -112,17 +113,20 @@ contract CardAuction is CardOwnership {
 
         cardIsForSale[_cardId] = false;
         cardToAuctionId[_cardId] = 0;
+        emit AuctionCancelled(_cardId, msg.sender);
     }
 
     function transferCard(uint _cardId, address _winner, uint _price) private {
         address payable beneficiary = payable(cardIdToOwner[_cardId]);
 
+        ownerCardCount[cardIdToOwner[_cardId]] = ownerCardCount[cardIdToOwner[_cardId]] - 1;
         uint cardIndex = cardIsAtIndex[_cardId];
         userOwnedCards[cardIdToOwner[_cardId]][cardIndex] = 999999999999999;
 
         userOwnedCards[_winner].push(_cardId);
         cardIsAtIndex[_cardId] = userOwnedCards[_winner].length - 1;
         cardIdToOwner[_cardId] = _winner;
+        ownerCardCount[cardIdToOwner[_cardId]] = ownerCardCount[cardIdToOwner[_cardId]] + 1;
         beneficiary.transfer(_price);
     }
 }
