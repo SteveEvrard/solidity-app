@@ -108,7 +108,7 @@ contract CardAuction is CardOwnership {
     function cancelAuction(uint _cardId) public onlyCardOwner(_cardId) {
         Auction memory auction = auctionIdToAuction[cardToAuctionId[_cardId]];
         require(auction.leadingBidder == address(0), "CANNOT CANCEL AN AUCTION THAT HAS BIDS");
-        require(auction.expireDate > block.timestamp, "CANNOT CANCEL AN AUCTION AFTER IT IS EXPIRED");
+        require(auction.expireDate > block.timestamp, "CANNOT CANCEL AN AUCTION AFTER IT HAS EXPIRED");
 
         cardIsForSale[_cardId] = false;
         cardToAuctionId[_cardId] = 0;

@@ -7,9 +7,6 @@ contract CardPackFactory is CardFactory {
 
     uint cardPackFee = 0.005 ether;
     uint cardPackQuantity = 10;
-    uint rareCardOdds = 3;
-    uint exoticCardOdds = 25;
-    uint legendaryCardOdds = 100;
 
     mapping (address => uint) public ownerCardCount;
     mapping (address => bool) public existingUser;
@@ -23,13 +20,9 @@ contract CardPackFactory is CardFactory {
     }
 
     function _createCardPack() internal {
-        uint cardCount = 0;
-
-        cardCount = createNonCommonCard(legendaryCardOdds, cardCount, 3);
-        cardCount = createNonCommonCard(exoticCardOdds, cardCount, 2);
-        cardCount = createNonCommonCard(rareCardOdds, cardCount, 1);
-        createCommonCards(cardCount, cardPackQuantity);
-
+        for(uint i = 0; i < cardPackQuantity; i++) {
+            createCard(i);
+        }
         ownerCardCount[msg.sender] = ownerCardCount[msg.sender] + cardPackQuantity;
     }
 
@@ -39,17 +32,5 @@ contract CardPackFactory is CardFactory {
 
     function setCardPackFee(uint _fee) external onlyOwner {
         cardPackFee = _fee;
-    }
-
-    function setRareCardOdds(uint _newOdds) external onlyOwner {
-        rareCardOdds = _newOdds;
-    }
-
-    function setExotixCardOdds(uint _newOdds) external onlyOwner {
-        exoticCardOdds = _newOdds;
-    }
-
-    function setLegendaryCardOdds(uint _newOdds) external onlyOwner {
-        legendaryCardOdds = _newOdds;
     }
 }
