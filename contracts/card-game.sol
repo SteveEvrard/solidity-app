@@ -1,14 +1,32 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "./card-auction.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract CardGame is CardAuction {
+abstract contract CardAuction {
+    struct Card {
+        uint cardId;
+        uint playerId;
+        uint attributeHash;
+        uint cardType;
+        bool inUse;
+    }
 
+   function cardIdToCard(uint _cardId) virtual public returns(uint256, uint256, uint256, uint256, bool);
+   function setCardIsInUse(uint _cardId) virtual public;
+}
+
+contract CardGame is Ownable {
+
+    CardAuction cardAuction;
     uint public gameId;
     mapping(uint => Game) public gameIdToGame;
     mapping(uint => mapping(address => uint[])) gameIdToPlayerCards;
     mapping(uint => bool) cardIsPlayable;
+
+    constructor(address _auctionAddress) {
+        cardAuction = CardAuction(_auctionAddress);
+    }
 
     struct Game {
         uint gameId;
@@ -19,6 +37,14 @@ contract CardGame is CardAuction {
         bool open;
         bool active; 
         address winner;
+    }
+
+    struct Card {
+        uint cardId;
+        uint playerId;
+        uint attributeHash;
+        uint cardType;
+        bool inUse;
     }
 
     event GameCreated(uint gameId, uint playerCount, uint cardCount, uint entryFee);
@@ -39,7 +65,8 @@ contract CardGame is CardAuction {
     modifier checkCardAvailability(uint[] memory _cardIds, address _player) {
         bool canPlay = true;
         for(uint i = 0; i < _cardIds.length; i++) {
-            if(cardIdToCard[_cardIds[i]].inUse) {
+            (,,,,bool inUse) = cardAuction.cardIdToCard(_cardIds[i]);
+            if(inUse) {
                 canPlay = false;
             }
         }
@@ -58,7 +85,7 @@ contract CardGame is CardAuction {
 
         gameIdToPlayerCards[_gameId][msg.sender] = _cardIds;
         for(uint i = 0; i < _cardIds.length; i++) {
-            cardIdToCard[_cardIds[i]].inUse = true;
+            cardAuction.setCardIsInUse(_cardIds[i]);
         }
         gameIdToGame[_gameId].players.push(msg.sender);
         if(gameIdToGame[_gameId].players.length == gameIdToGame[_gameId].numberOfPlayers) {

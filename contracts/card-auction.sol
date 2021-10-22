@@ -13,13 +13,14 @@ contract CardAuction is CardOwnership {
 
     // Aion aion;
     uint public maxAuctionDuration = 604800;
-    uint public auctionId = 1;
+    uint public auctionId = 0;
     mapping(uint => bool) public cardIsForSale;
-    mapping(uint => uint) public cardToAuctionId;
+    mapping(uint => uint) public cardIdToAuctionId;
     mapping(uint => Auction) public auctionIdToAuction;
 
     struct Auction {
         uint auctionId;
+        bool open;
         uint currentBid;
         address leadingBidder;
         uint expireDate;
@@ -30,7 +31,7 @@ contract CardAuction is CardOwnership {
     event AuctionOpened(uint indexed auctionId, uint indexed cardId, uint startingBid, uint expireDate, address indexed owner);
     event BidPlaced(uint indexed auctionId, uint indexed cardId, uint bid, address indexed bidder);
     event AuctionClosed(uint indexed auctionId, uint indexed cardId, uint salePrice, address indexed to, bool completed);
-    event AuctionCancelled(uint cardId, address owner);
+    event AuctionCancelled(uint cardId, address indexed owner);
 
     modifier onlyCardOwner(uint _cardId) {
         address owner = cardIdToOwner[_cardId];
@@ -63,21 +64,22 @@ contract CardAuction is CardOwnership {
         require(!cardIsForSale[_cardId], 'CARD IS CURRENTLY UP FOR AUCTION');
         require(!cardIdToCard[_cardId].inUse, "CARD IS CURRENTLY IN USE");
 
-        Auction memory auction = Auction(auctionId, _startingBid, address(0), block.timestamp + _duration, _cardId, 0);
+        Auction memory auction = Auction(auctionId, true, _startingBid, address(0), block.timestamp + _duration, _cardId, 0);
         auctionIdToAuction[auctionId] = auction;
 
         cardIdToCard[_cardId].inUse = true;
-        cardToAuctionId[_cardId] = auctionId;
+        cardIdToAuctionId[_cardId] = auctionId;
         cardIsForSale[_cardId] = true;
         emit AuctionOpened(auctionId, _cardId, _startingBid, block.timestamp + _duration, msg.sender);
         auctionId = auctionId + 1;
     }
 
     function placeBid(uint _cardId) external payable {
-        Auction memory auction = auctionIdToAuction[cardToAuctionId[_cardId]];
+        Auction memory auction = auctionIdToAuction[cardIdToAuctionId[_cardId]];
         require(cardIdToOwner[_cardId] != msg.sender, 'CAN NOT BID ON CARDS YOU OWN');
         require(cardIsForSale[_cardId], 'CARD NOT FOR SALE');
         require(msg.value > auction.currentBid, 'BID LOWER THAN CURRENT BID');
+        require(auction.open, "THIS AUCTION IS NO LONGER OPEN");
 
         address payable outbidAddress = payable(auction.leadingBidder);
 
@@ -93,26 +95,29 @@ contract CardAuction is CardOwnership {
     }
 
     function endAuction(uint _cardId) public onlyCardOwner(_cardId) {
-        Auction memory auction = auctionIdToAuction[cardToAuctionId[_cardId]];
+        Auction memory auction = auctionIdToAuction[cardIdToAuctionId[_cardId]];
         require(auction.expireDate <= block.timestamp, "AUCTION NOT YET FINISHED");
 
         if(auction.leadingBidder != address(0)) {
             transferCard(_cardId, auction.leadingBidder, auction.currentBid);
         }
-
         AuctionClosed(auction.auctionId, auction.cardId, auction.currentBid, auction.leadingBidder, auction.leadingBidder != address(0));
+        auction.open = false;
+        auctionIdToAuction[auction.auctionId] = auction;
         cardIsForSale[_cardId] = false;
         cardIdToCard[_cardId].inUse = false;
-        cardToAuctionId[_cardId] = 0;
     }
 
     function cancelAuction(uint _cardId) public onlyCardOwner(_cardId) {
-        Auction memory auction = auctionIdToAuction[cardToAuctionId[_cardId]];
+        Auction memory auction = auctionIdToAuction[cardIdToAuctionId[_cardId]];
         require(auction.leadingBidder == address(0), "CANNOT CANCEL AN AUCTION THAT HAS BIDS");
         require(auction.expireDate > block.timestamp, "CANNOT CANCEL AN AUCTION AFTER IT HAS EXPIRED");
+        require(auction.open, "THIS AUCTION IS NO LONGER OPEN");
 
         cardIsForSale[_cardId] = false;
-        cardToAuctionId[_cardId] = 0;
+        cardIdToCard[_cardId].inUse = false;
+        auction.open = false;
+        auctionIdToAuction[auction.auctionId] = auction;
         emit AuctionCancelled(_cardId, msg.sender);
     }
 
@@ -129,4 +134,9 @@ contract CardAuction is CardOwnership {
         ownerCardCount[cardIdToOwner[_cardId]] = ownerCardCount[cardIdToOwner[_cardId]] + 1;
         beneficiary.transfer(_price);
     }
+
+    function setCardIsInUse(uint _cardId) external {
+        cardIdToCard[_cardId].inUse = true;
+    }
+
 }

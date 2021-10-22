@@ -8,9 +8,9 @@ contract CardFactory is Ownable {
     uint _tokenId;
     uint private _randNonce = 0;
     uint totalPlayers = 190;
-    uint rareCardOdds = 8;
-    uint exoticCardOdds = 40;
-    uint legendaryCardOdds = 100;
+    uint rareCardOdds = 9;
+    uint exoticCardOdds = 39;
+    uint legendaryCardOdds = 99;
 
     mapping (uint => address) public cardIdToOwner;
     mapping (address => uint[]) public userOwnedCards;
