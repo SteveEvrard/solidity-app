@@ -30,7 +30,7 @@ contract CardAuction is CardOwnership {
     
     event AuctionOpened(uint indexed auctionId, uint indexed cardId, uint startingBid, uint expireDate, address indexed owner);
     event BidPlaced(uint indexed auctionId, uint indexed cardId, uint bid, address indexed bidder);
-    event AuctionClosed(uint indexed auctionId, uint indexed cardId, uint salePrice, address indexed to, bool completed);
+    event AuctionClosed(uint auctionId, uint indexed cardId, uint salePrice, address indexed from, address indexed to, bool completed);
     event AuctionCancelled(uint cardId, address indexed owner);
 
     modifier onlyCardOwner(uint _cardId) {
@@ -97,11 +97,11 @@ contract CardAuction is CardOwnership {
     function endAuction(uint _cardId) public onlyCardOwner(_cardId) {
         Auction memory auction = auctionIdToAuction[cardIdToAuctionId[_cardId]];
         require(auction.expireDate <= block.timestamp, "AUCTION NOT YET FINISHED");
-
+        address previousOwner = cardIdToOwner[_cardId];
         if(auction.leadingBidder != address(0)) {
             transferCard(_cardId, auction.leadingBidder, auction.currentBid);
         }
-        AuctionClosed(auction.auctionId, auction.cardId, auction.currentBid, auction.leadingBidder, auction.leadingBidder != address(0));
+        AuctionClosed(auction.auctionId, auction.cardId, auction.currentBid, previousOwner, auction.leadingBidder, auction.leadingBidder != address(0));
         auction.open = false;
         auctionIdToAuction[auction.auctionId] = auction;
         cardIsForSale[_cardId] = false;

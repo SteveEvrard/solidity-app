@@ -20,6 +20,7 @@ contract CardGame is Ownable {
 
     CardAuction cardAuction;
     uint public gameId;
+    string private secret;
     mapping(uint => Game) public gameIdToGame;
     mapping(uint => mapping(address => uint[])) gameIdToPlayerCards;
     mapping(uint => bool) cardIsPlayable;
@@ -80,9 +81,10 @@ contract CardGame is Ownable {
         gameId = gameId + 1;
     }
 
-    function joinGame(uint _gameId, uint[] memory _cardIds) external payable checkPlayersInGame(_gameId, msg.sender) checkCardAvailability(_cardIds, msg.sender) {
+    function joinGame(uint _gameId, uint[] memory _cardIds, string memory _secret) external payable checkPlayersInGame(_gameId, msg.sender) checkCardAvailability(_cardIds, msg.sender) {
         require(gameIdToGame[_gameId].entryFee == msg.value, "INVALID ENTRY FEE");
-
+        require(compareSecret(_secret), "INVALID SECRET USED IN REQUEST");
+        
         gameIdToPlayerCards[_gameId][msg.sender] = _cardIds;
         for(uint i = 0; i < _cardIds.length; i++) {
             cardAuction.setCardIsInUse(_cardIds[i]);
@@ -112,5 +114,13 @@ contract CardGame is Ownable {
 
     function getCardEntriesByPlayer(uint _gameId, address _user) external view returns(uint[] memory) {
         return gameIdToPlayerCards[_gameId][_user];
+    }
+
+    function compareSecret(string memory _secret) private view returns(bool) {
+        return (keccak256(abi.encodePacked((_secret))) == keccak256(abi.encodePacked((secret))));
+    }
+
+    function setSecret(string memory _secret) external onlyOwner {
+        secret = _secret;
     }
 }
