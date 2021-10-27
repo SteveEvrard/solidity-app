@@ -5,8 +5,8 @@ import "./card-factory.sol";
 
 contract CardPackFactory is CardFactory {
 
-    uint cardPackFee = 0.005 ether;
-    uint cardPackQuantity = 10;
+    uint public cardPackFee = 0.005 ether;
+    uint public cardPackQuantity = 10;
 
     mapping (address => uint) public ownerCardCount;
     mapping (address => bool) public existingUser;

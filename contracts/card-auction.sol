@@ -30,7 +30,7 @@ contract CardAuction is CardOwnership {
     
     event AuctionOpened(uint indexed auctionId, uint indexed cardId, uint startingBid, uint expireDate, address indexed owner);
     event BidPlaced(uint indexed auctionId, uint indexed cardId, uint bid, address indexed bidder);
-    event AuctionClosed(uint auctionId, uint indexed cardId, uint salePrice, address indexed from, address indexed to, bool completed);
+    event AuctionClosed(uint indexed auctionId, uint cardId, uint salePrice, address indexed from, address indexed to, bool completed);
     event AuctionCancelled(uint cardId, address indexed owner);
 
     modifier onlyCardOwner(uint _cardId) {
@@ -135,8 +135,8 @@ contract CardAuction is CardOwnership {
         beneficiary.transfer(_price);
     }
 
-    function setCardIsInUse(uint _cardId) external {
-        cardIdToCard[_cardId].inUse = true;
+    function setCardUseStatus(uint _cardId, bool _isInUse) external {
+        cardIdToCard[_cardId].inUse = _isInUse;
     }
 
 }
